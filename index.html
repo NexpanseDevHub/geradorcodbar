@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>[NEXPANSE] Gerador de Código De Barras</title>
+    <title>Gerador De Código De Barras</title>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
@@ -63,9 +63,14 @@
             align-items: center;
             margin-bottom: 15px;
         }
-        canvas {
-            cursor: pointer;
+        #barcode-wrapper {
+            position: relative;
             margin-bottom: 10px;
+        }
+        #barcode {
+            cursor: pointer;
+            background: white;
+            padding: 5px;
         }
         .checkbox-container {
             display: flex;
@@ -95,6 +100,18 @@
             background: #00ffff;
             color: #313233;
         }
+        .copy-notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            z-index: 1000;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -107,7 +124,9 @@
             <input type="text" id="textInput" oninput="generateBarcode()">
         </div>
         <div class="output-container">
-            <svg id="barcode"></svg>
+            <div id="barcode-wrapper">
+                <svg id="barcode"></svg>
+            </div>
             <div class="checkbox-container">
                 <input type="checkbox" id="showNumber" onchange="generateBarcode()">
                 <label for="showNumber">Mostrar Número</label>
@@ -116,8 +135,12 @@
         <button onclick="redirectToWhatsApp()">Quero Um App Igual A Esse<span>Para Minha Empresa</span></button>
     </div>
 
+    <div class="copy-notification" id="copyNotification">Imagem copiada!</div>
+
     <script>
-        // Corrigindo o problema do código de barras que não aparecia
+        // Variável para armazenar o último texto usado
+        let lastGeneratedText = "Bem-vindo";
+
         function generateBarcode() {
             let textInput = document.getElementById("textInput");
             let showNumber = document.getElementById("showNumber").checked;
@@ -129,20 +152,76 @@
                 text = "Bem-vindo";
             }
 
-            // Usando SVG que é mais compatível
+            lastGeneratedText = text;
+
+            // Gerar o código de barras
             JsBarcode(svgElement, text, {
                 format: "CODE128",
                 displayValue: showNumber,
-                background: "transparent",
+                background: "white",
                 lineColor: "#000000",
                 width: 2,
                 height: 60,
                 margin: 10
             });
+
+            // Configurar o SVG para ser copiável
+            setupCopyableBarcode();
+        }
+
+        function setupCopyableBarcode() {
+            const svgElement = document.getElementById("barcode");
+            const wrapper = document.getElementById("barcode-wrapper");
+            
+            // Converter SVG para canvas para melhor cópia
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const data = new XMLSerializer().serializeToString(svgElement);
+            const DOMURL = window.URL || window.webkitURL || window;
+            
+            const img = new Image();
+            const svgBlob = new Blob([data], {type: 'image/svg+xml;charset=utf-8'});
+            const url = DOMURL.createObjectURL(svgBlob);
+            
+            img.onload = function() {
+                canvas.width = svgElement.width.baseVal.value;
+                canvas.height = svgElement.height.baseVal.value;
+                ctx.drawImage(img, 0, 0);
+                DOMURL.revokeObjectURL(url);
+                
+                // Adiciona canvas como fallback para cópia
+                if (wrapper.contains(canvas)) {
+                    wrapper.removeChild(canvas);
+                }
+                wrapper.appendChild(canvas);
+                
+                // Esconde o SVG original (mas mantém para regeneração)
+                svgElement.style.display = 'none';
+                
+                // Configura o evento de clique para copiar
+                canvas.oncontextmenu = function(e) {
+                    e.preventDefault();
+                    canvas.toBlob(function(blob) {
+                        const item = new ClipboardItem({ "image/png": blob });
+                        navigator.clipboard.write([item]).then(function() {
+                            showCopyNotification();
+                        });
+                    });
+                };
+            };
+            
+            img.src = url;
+        }
+
+        function showCopyNotification() {
+            const notification = document.getElementById("copyNotification");
+            notification.style.display = 'block';
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 2000);
         }
 
         function redirectToWhatsApp() {
-            // Feedback visual suave
             const btn = document.querySelector('button');
             const originalText = btn.innerHTML;
             
@@ -153,7 +232,6 @@
             setTimeout(() => {
                 window.open("https://wa.me/5541987206591?text=Olá,%20quero%20criar%20meu%20próprio%20sistema", "_blank");
                 
-                // Volta ao normal após 1 segundo
                 setTimeout(() => {
                     btn.innerHTML = originalText;
                     btn.style.opacity = '1';
@@ -162,7 +240,7 @@
             }, 300);
         }
 
-        // Garante que o código de barras seja gerado quando a página carrega
+        // Inicializa quando a página carrega
         document.addEventListener('DOMContentLoaded', function() {
             generateBarcode();
         });
