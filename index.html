@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador De Código De Barras</title>
+    <title>[NXPS] Gerador de Código De Barras</title>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
@@ -63,19 +63,18 @@
             align-items: center;
             margin-bottom: 15px;
         }
-        #barcode-container {
+        #barcode-wrapper {
             position: relative;
             margin-bottom: 10px;
-            min-height: 80px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
         }
         #barcode-svg {
-            cursor: pointer;
+            display: none; /* Esconde o SVG, usamos apenas para gerar o canvas */
+        }
+        #barcode-canvas {
             background: white;
             padding: 5px;
             max-width: 100%;
+            cursor: pointer;
         }
         .checkbox-container {
             display: flex;
@@ -113,12 +112,13 @@
             <img src="https://i.ibb.co/WN1smwHN/BRANCO-CINZA.png" alt="Logo" class="logo">
         </a>
         <div class="input-container">
-            <label for="textInput">Insira o Número da Matrícula:</label>
+            <label for="textInput">Insira o Número:</label>
             <input type="text" id="textInput" oninput="generateBarcode()">
         </div>
         <div class="output-container">
-            <div id="barcode-container">
+            <div id="barcode-wrapper">
                 <svg id="barcode-svg"></svg>
+                <canvas id="barcode-canvas"></canvas>
             </div>
             <div class="checkbox-container">
                 <input type="checkbox" id="showNumber" onchange="generateBarcode()">
@@ -133,6 +133,7 @@
             const textInput = document.getElementById("textInput");
             const showNumber = document.getElementById("showNumber").checked;
             const svgElement = document.getElementById("barcode-svg");
+            const canvas = document.getElementById("barcode-canvas");
 
             let text = textInput.value.trim();
             
@@ -143,7 +144,7 @@
             // Limpa o SVG antes de gerar novo código
             svgElement.innerHTML = '';
             
-            // Gera o código de barras no SVG
+            // Gera o código de barras no SVG (invisível)
             JsBarcode(svgElement, text, {
                 format: "CODE128",
                 displayValue: showNumber,
@@ -154,39 +155,21 @@
                 margin: 10
             });
 
-            // Converte SVG para imagem (data URL) e adiciona como href
+            // Converte SVG para Canvas (que é copiável)
             const svgData = new XMLSerializer().serializeToString(svgElement);
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
             const img = new Image();
+            const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
+            const url = URL.createObjectURL(svgBlob);
             
             img.onload = function() {
                 canvas.width = img.width;
                 canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0);
-                
-                // Adiciona a imagem como href no SVG para permitir "Abrir imagem em nova aba"
-                const pngData = canvas.toDataURL('image/png');
-                svgElement.parentElement.innerHTML = `
-                    <a href="${pngData}" download="codigo-de-barras.png" id="barcode-link">
-                        <svg id="barcode-svg"></svg>
-                    </a>
-                `;
-                
-                // Regenera o código de barras no novo SVG
-                const newSvg = document.getElementById("barcode-svg");
-                JsBarcode(newSvg, text, {
-                    format: "CODE128",
-                    displayValue: showNumber,
-                    background: "white",
-                    lineColor: "#000000",
-                    width: 2,
-                    height: 60,
-                    margin: 10
-                });
+                URL.revokeObjectURL(url);
             };
             
-            img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+            img.src = url;
         }
 
         function redirectToWhatsApp() {
