@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador De Código De Barras</title>
+    <title>Gerador de Código De Barras</title>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
@@ -63,14 +63,26 @@
             align-items: center;
             margin-bottom: 15px;
         }
-        #barcode-wrapper {
+        #barcode-container {
             position: relative;
             margin-bottom: 10px;
+            min-height: 80px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
-        #barcode {
+        #barcode-svg {
             cursor: pointer;
             background: white;
             padding: 5px;
+            max-width: 100%;
+        }
+        #barcode-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            opacity: 0;
         }
         .checkbox-container {
             display: flex;
@@ -120,12 +132,13 @@
             <img src="https://i.ibb.co/WN1smwHN/BRANCO-CINZA.png" alt="Logo" class="logo">
         </a>
         <div class="input-container">
-            <label for="textInput">Insira o Número da Matrícula:</label>
+            <label for="textInput">Insira o Número:</label>
             <input type="text" id="textInput" oninput="generateBarcode()">
         </div>
         <div class="output-container">
-            <div id="barcode-wrapper">
-                <svg id="barcode"></svg>
+            <div id="barcode-container">
+                <svg id="barcode-svg"></svg>
+                <canvas id="barcode-canvas"></canvas>
             </div>
             <div class="checkbox-container">
                 <input type="checkbox" id="showNumber" onchange="generateBarcode()">
@@ -138,13 +151,14 @@
     <div class="copy-notification" id="copyNotification">Imagem copiada!</div>
 
     <script>
-        // Variável para armazenar o último texto usado
-        let lastGeneratedText = "Bem-vindo";
+        // Variável para controle do canvas
+        let canvasInitialized = false;
 
         function generateBarcode() {
-            let textInput = document.getElementById("textInput");
-            let showNumber = document.getElementById("showNumber").checked;
-            let svgElement = document.getElementById("barcode");
+            const textInput = document.getElementById("textInput");
+            const showNumber = document.getElementById("showNumber").checked;
+            const svgElement = document.getElementById("barcode-svg");
+            const canvas = document.getElementById("barcode-canvas");
 
             let text = textInput.value.trim();
             
@@ -152,9 +166,10 @@
                 text = "Bem-vindo";
             }
 
-            lastGeneratedText = text;
-
-            // Gerar o código de barras
+            // Limpa o SVG antes de gerar novo código
+            svgElement.innerHTML = '';
+            
+            // Gera o código de barras no SVG
             JsBarcode(svgElement, text, {
                 format: "CODE128",
                 displayValue: showNumber,
@@ -165,17 +180,11 @@
                 margin: 10
             });
 
-            // Configurar o SVG para ser copiável
-            setupCopyableBarcode();
+            // Prepara o canvas para cópia
+            prepareCanvasForCopy(svgElement, canvas);
         }
 
-        function setupCopyableBarcode() {
-            const svgElement = document.getElementById("barcode");
-            const wrapper = document.getElementById("barcode-wrapper");
-            
-            // Converter SVG para canvas para melhor cópia
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
+        function prepareCanvasForCopy(svgElement, canvas) {
             const data = new XMLSerializer().serializeToString(svgElement);
             const DOMURL = window.URL || window.webkitURL || window;
             
@@ -186,27 +195,19 @@
             img.onload = function() {
                 canvas.width = svgElement.width.baseVal.value;
                 canvas.height = svgElement.height.baseVal.value;
+                const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0);
                 DOMURL.revokeObjectURL(url);
                 
-                // Adiciona canvas como fallback para cópia
-                if (wrapper.contains(canvas)) {
-                    wrapper.removeChild(canvas);
-                }
-                wrapper.appendChild(canvas);
-                
-                // Esconde o SVG original (mas mantém para regeneração)
-                svgElement.style.display = 'none';
-                
-                // Configura o evento de clique para copiar
-                canvas.oncontextmenu = function(e) {
+                // Configura o evento de clique direito no container
+                document.getElementById('barcode-container').oncontextmenu = function(e) {
                     e.preventDefault();
                     canvas.toBlob(function(blob) {
                         const item = new ClipboardItem({ "image/png": blob });
                         navigator.clipboard.write([item]).then(function() {
                             showCopyNotification();
                         });
-                    });
+                    }, 'image/png');
                 };
             };
             
