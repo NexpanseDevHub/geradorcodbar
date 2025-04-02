@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Código de Barras</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap">
+    <script src="https://cdn.jsdelivr.net/jsbarcode/3.11.0/JsBarcode.all.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+        body {
+            background-color: #313233;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+            padding: 20px;
+        }
+        .container {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+        .logo {
+            display: block;
+            margin: 0 auto 10px;
+            width: 150px;
+            cursor: pointer;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #313233;
+            border-radius: 8px;
+            font-size: 16px;
+            text-align: center;
+            outline: none;
+        }
+        .barcode-container {
+            margin: 20px 0;
+            background: transparent;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            padding: 10px;
+        }
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        button {
+            background: #313233;
+            color: #00ffff;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #222;
+        }
+        .whatsapp-btn {
+            text-align: center;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        .whatsapp-btn a {
+            text-decoration: none;
+            color: #00ffff;
+            font-weight: bold;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Logo da empresa -->
+        <img src="https://i.ibb.co/WN1smwHN/BRANCO-CINZA.png" class="logo" onclick="window.open('https://www.linkedin.com/company/nexpansesolutions', '_blank')">
+
+        <!-- Campo de entrada -->
+        <label for="input-text" style="color:#313233; font-weight:600;">Insira o Texto</label>
+        <input type="text" id="input-text" placeholder="Digite algo..." oninput="generateBarcode()">
+
+        <!-- Container do código de barras -->
+        <div class="barcode-container">
+            <svg id="barcode"></svg>
+        </div>
+
+        <!-- Checkbox para mostrar número -->
+        <div class="checkbox-container">
+            <input type="checkbox" id="show-number" onclick="generateBarcode()">
+            <label for="show-number" style="color:#313233;">Mostrar Número</label>
+        </div>
+
+        <!-- Botão de WhatsApp -->
+        <div class="whatsapp-btn">
+            <a href="https://wa.me/5541987206591?text=Olá,%20quero%20criar%20meu%20próprio%20sistema" target="_blank">
+                QUERO UM SISTEMA IGUAL A ESSE <br> PARA MINHA EMPRESA
+            </a>
+        </div>
+    </div>
+
+    <script>
+        function generateBarcode() {
+            let text = document.getElementById("input-text").value;
+            let showNumber = document.getElementById("show-number").checked;
+            let barcodeElement = document.getElementById("barcode");
+
+            // Define o código padrão "Bem-vindo" se o input estiver vazio
+            if (text.trim() === "") {
+                text = "Bem-vindo";
+            }
+
+            JsBarcode(barcodeElement, text, {
+                format: "CODE128",
+                displayValue: showNumber,
+                background: "transparent",
+                lineColor: "#000",
+                fontSize: 14,
+                width: 2,
+                height: 60
+            });
+        }
+
+        // Gera o código "Bem-vindo" ao carregar a página
+        window.onload = generateBarcode;
+    </script>
+
+</body>
+</html>
